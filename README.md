@@ -50,7 +50,7 @@ python tools/build_flow.py rel_final \
 |---|---|
 | CPU | 5 级顺序、**双发射**（每拍最多 2 条退休）、RV32I + Zmmul；I-cache 8 KB 2-way、D-cache 2 KB（32 组×2 路×32 B）、16 项预取缓冲、BTB 256 项、RAS、4 项 store buffer、双乘法器 |
 | CNN 加速器 | 描述符驱动序列器、滑窗/行缓冲、分页 PE 阵列、输出累加、ROI 裁剪、权重/移位 ROM |
-| 帧源 | ROM 帧源（`accel/mem/framesrc.mem`，需用 `tools/pack_frames.py` 生成，见 §3.4），CPU 经 `0x6000_0000` 读取 |
+| 帧源 | ROM 帧源（`accel/mem/framesrc.mem`，仓库内为合成测试图案占位，可用 `tools/pack_frames.py` 替换，见 §3.4），CPU 经 `0x6000_0000` 读取 |
 | SoC | RAM 64 KB（真双端口）、UART、GPIO、64 位周期计数器 + INTC、CPU/CNN 异步域 hold-until-ack 握手桥 |
 | 固件 | 串口菜单：`1` 跑 CoreMark 6,000 次迭代（≈11.6 s，满足赛题 ≥10 s）；`2` 跑门禁人脸识别 |
 
@@ -223,8 +223,9 @@ python tools/build_integration_fw.py --check   # 重建并逐字节比对现有�
 
 ### 3.4 生成帧 ROM（可选，仓库不附带人脸图像）
 
-`rtl/accel/mem/framesrc.mem` 为四帧人脸图像的 ROM 转储，原数据来自 ChokePoint
-研究数据集，**不随仓库分发**。仿真与重建码流前请自行生成等价 ROM：
+`rtl/accel/mem/framesrc.mem` 在原始交付包中为四帧人脸图像的 ROM 转储，原数据来自
+ChokePoint 研究数据集，**不得再分发**。本仓库附带的是**合成测试图案**占位 ROM
+（梯度背景 + 运动方块，非真人图像），保证开箱即可仿真；需要真实画面时自行替换：
 
 ```bash
 # 用自己的图片（任意尺寸，脚本会缩放到 128×96 并转 24b RGB）
