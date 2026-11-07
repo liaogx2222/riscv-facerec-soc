@@ -1,0 +1,14 @@
+# 构建产物
+build/
+*.vm
+*.log
+
+# Python
+__pycache__/
+*.pyc
+
+# 编辑器/系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

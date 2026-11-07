@@ -1,0 +1,5 @@
+码流与技术报告表4 对应（9,188,552 B 每份）：
+facerec_top_menu_line_202p5.sbit  md5=692e2dc77a8751d9e98d399bc1ffc3ff  9188552 B
+facerec_top_ila_line_202p5.sbit  md5=36e3096327a0960b541c07e0f9c48d69  9188552 B
+facerec_top_qat5_202p5.sbit  md5=b2c404f41db22b830062f353733ec1e9  9188552 B
+表4 前缀核对：菜单版 692e2dc77a875 / 调试版 36e3096327a09 / 五人QAT版 b2c404f41db22b83

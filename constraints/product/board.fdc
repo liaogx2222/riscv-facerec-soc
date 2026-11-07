@@ -1,0 +1,83 @@
+# MES2L676-200HP: 27MHz input; CPU101.25MHz and CNN202.5MHz PLL outputs.
+# Async external controls; only external I/O endpoints are excluded.
+create_clock -name clk_sys -period 9.876543 [get_pins {u_pll/clkout0}]
+create_clock -name clk_cnn -period 4.938272 [get_pins {u_pll/clkout1}]
+set_clock_uncertainty 0.100 [get_clocks {clk_sys clk_cnn}]
+set_false_path -from [get_ports {key_n uart_rxd}]
+set_false_path -to [get_ports {led_out[*] uart_txd}]
+
+# Handshake CDC only: first synchronizer stages receive asynchronous toggles.
+# The second stages and ALL intra-domain logic remain timed.
+set_false_path -to [get_cells -hierarchical {*u_bridge/m_req_sync1*}]
+set_false_path -to [get_cells -hierarchical {*u_bridge/c_ack_sync1*}]
+# Reset assertion crosses into a three-stage CNN reset-release synchronizer.
+# This does not cut the CNN-clocked shift/release paths between its stages.
+set_false_path -from [get_clocks {clk_sys}] -to [get_cells -hierarchical {*G_CDC/cnn_reset_pipe*}]
+# Bundled payloads are held until the returned synchronized acknowledgement.
+# Bound physical data delay rather than excluding these data paths.
+set_max_delay -datapath_only -from [get_cells -hierarchical {*u_bridge/c_req_hold*}] -to [get_cells -hierarchical {*u_bridge/m_req_hold*}] 3.500
+set_min_delay -from [get_cells -hierarchical {*u_bridge/c_req_hold*}] -to [get_cells -hierarchical {*u_bridge/m_req_hold*}] 0.000
+set_max_delay -datapath_only -from [get_cells -hierarchical {*u_bridge/m_rsp_hold*}] -to [get_cells -hierarchical {*u_bridge/c_rdata*}] 3.500
+set_min_delay -from [get_cells -hierarchical {*u_bridge/m_rsp_hold*}] -to [get_cells -hierarchical {*u_bridge/c_rdata*}] 0.000
+define_attribute {p:sys_clk} {PAP_IO_DIRECTION} {INPUT}
+define_attribute {p:sys_clk} {PAP_IO_LOC} {D18}
+define_attribute {p:sys_clk} {PAP_IO_VCCIO} {3.3}
+define_attribute {p:sys_clk} {PAP_IO_STANDARD} {LVCMOS33}
+
+# key_n (C22, 低有效)。平台 rst_n 可能长期为低 → 顶层仅作辅助复位(3 级同步)
+define_attribute {p:key_n} {PAP_IO_DIRECTION} {INPUT}
+define_attribute {p:key_n} {PAP_IO_LOC} {C22}
+define_attribute {p:key_n} {PAP_IO_VCCIO} {3.3}
+define_attribute {p:key_n} {PAP_IO_STANDARD} {LVCMOS33}
+
+# 调试串口: AB26 已实测确认为 FPGA→仪器 TXD
+define_attribute {p:uart_txd} {PAP_IO_DIRECTION} {OUTPUT}
+define_attribute {p:uart_txd} {PAP_IO_LOC} {AB26}
+define_attribute {p:uart_txd} {PAP_IO_VCCIO} {3.3}
+define_attribute {p:uart_txd} {PAP_IO_STANDARD} {LVCMOS33}
+define_attribute {p:uart_txd} {PAP_IO_DRIVE} {8}
+define_attribute {p:uart_txd} {PAP_IO_SLEW} {SLOW}
+
+# UART RX 预留脚 (AC26 = TXD AB26 对侧)
+define_attribute {p:uart_rxd} {PAP_IO_DIRECTION} {INPUT}
+define_attribute {p:uart_rxd} {PAP_IO_LOC} {AC26}
+define_attribute {p:uart_rxd} {PAP_IO_VCCIO} {3.3}
+define_attribute {p:uart_rxd} {PAP_IO_STANDARD} {LVCMOS33}
+
+#---------------------------------------------------------------------
+# S3 指示灯 LED[0..3] (低电平点亮)
+#   [0] 出复位常亮 / [1] 心跳闪烁 / [2] 门状态 / [3] uart 活动
+#---------------------------------------------------------------------
+define_attribute {p:led_out[0]} {PAP_IO_DIRECTION} {OUTPUT}
+define_attribute {p:led_out[0]} {PAP_IO_LOC} {U16}
+define_attribute {p:led_out[0]} {PAP_IO_VCCIO} {3.3}
+define_attribute {p:led_out[0]} {PAP_IO_STANDARD} {LVCMOS33}
+define_attribute {p:led_out[0]} {PAP_IO_DRIVE} {8}
+define_attribute {p:led_out[0]} {PAP_IO_SLEW} {SLOW}
+
+define_attribute {p:led_out[1]} {PAP_IO_DIRECTION} {OUTPUT}
+define_attribute {p:led_out[1]} {PAP_IO_LOC} {U15}
+define_attribute {p:led_out[1]} {PAP_IO_VCCIO} {3.3}
+define_attribute {p:led_out[1]} {PAP_IO_STANDARD} {LVCMOS33}
+define_attribute {p:led_out[1]} {PAP_IO_DRIVE} {8}
+define_attribute {p:led_out[1]} {PAP_IO_SLEW} {SLOW}
+
+define_attribute {p:led_out[2]} {PAP_IO_DIRECTION} {OUTPUT}
+define_attribute {p:led_out[2]} {PAP_IO_LOC} {V17}
+define_attribute {p:led_out[2]} {PAP_IO_VCCIO} {3.3}
+define_attribute {p:led_out[2]} {PAP_IO_STANDARD} {LVCMOS33}
+define_attribute {p:led_out[2]} {PAP_IO_DRIVE} {8}
+define_attribute {p:led_out[2]} {PAP_IO_SLEW} {SLOW}
+
+define_attribute {p:led_out[3]} {PAP_IO_DIRECTION} {OUTPUT}
+define_attribute {p:led_out[3]} {PAP_IO_LOC} {V16}
+define_attribute {p:led_out[3]} {PAP_IO_VCCIO} {3.3}
+define_attribute {p:led_out[3]} {PAP_IO_STANDARD} {LVCMOS33}
+define_attribute {p:led_out[3]} {PAP_IO_DRIVE} {8}
+define_attribute {p:led_out[3]} {PAP_IO_SLEW} {SLOW}
+
+# Keep the CPU, fetch queue and caches close; no timing exceptions added.
+define_attribute {u_soc/u_cpu} {PAP_GROUP} {cpu_group}
+define_attribute {u_soc/u_pf} {PAP_GROUP} {cpu_group}
+define_attribute {u_soc/u_ic} {PAP_GROUP} {cpu_group}
+define_attribute {u_soc/u_dc} {PAP_GROUP} {cpu_group}

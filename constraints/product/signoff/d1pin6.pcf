@@ -1,0 +1,15 @@
+def_port {led_out[0]} LOC=U16 VCCIO=3.3 IOSTANDARD=LVCMOS33 DRIVE=8 SLEW=SLOW
+def_port {led_out[1]} LOC=U15 VCCIO=3.3 IOSTANDARD=LVCMOS33 DRIVE=8 SLEW=SLOW
+def_port {led_out[2]} LOC=V17 VCCIO=3.3 IOSTANDARD=LVCMOS33 DRIVE=8 SLEW=SLOW
+def_port {led_out[3]} LOC=V16 VCCIO=3.3 IOSTANDARD=LVCMOS33 DRIVE=8 SLEW=SLOW
+def_port {uart_txd} LOC=AB26 VCCIO=3.3 IOSTANDARD=LVCMOS33 DRIVE=8 SLEW=SLOW
+def_port {key_n} LOC=C22 VCCIO=3.3 IOSTANDARD=LVCMOS33
+def_port {sys_clk} LOC=D18 VCCIO=3.3 IOSTANDARD=LVCMOS33
+def_port {uart_rxd} LOC=AC26 VCCIO=3.3 IOSTANDARD=LVCMOS33
+def_inst_site u_soc/G_FACEREC.u_facerec/u_soc/u_d1/N5/gopapm APM_461_462
+def_inst_site u_soc/G_FACEREC.u_facerec/u_soc/u_d1/D1W_3/gopdrm_36k DRM_490_462
+def_inst_site u_soc/G_FACEREC.u_facerec/u_soc/u_d1/D1W_8/gopdrm_36k DRM_490_492
+def_inst_site u_soc/G_FACEREC.u_facerec/u_soc/u_d1/D1W_9/gopdrm_36k DRM_490_522
+def_inst_site u_soc/G_FACEREC.u_facerec/u_soc/u_d1/D1W_10/gopdrm_36k DRM_490_552
+def_inst_site u_soc/G_FACEREC.u_facerec/u_soc/u_d1/D1W_11/gopdrm_36k DRM_490_582
+def_inst_site u_soc/G_FACEREC.u_facerec/u_soc/u_d1/D1W_12/gopdrm_36k DRM_490_612

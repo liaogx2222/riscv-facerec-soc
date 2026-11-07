@@ -1,0 +1,12 @@
+# 不做行尾转换，保证 MANIFEST 哈希与工作区一致
+* -text
+
+# 二进制文件
+*.sbit binary
+*.rtr  binary
+*.rur  binary
+*.pdf  binary
+*.pptx binary
+
+# 语言统计
+*.v    linguist-language=Verilog
