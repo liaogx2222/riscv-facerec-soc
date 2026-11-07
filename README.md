@@ -3,7 +3,7 @@
 在紫光同创 **PG2L200H-6-FBB676** FPGA 上实现的异构片上系统：双发射 RV32I 处理器
 （101.25 MHz）与人脸识别 CNN 加速器（202.5 MHz）经保持总线与 toggle 握手跨域协作，
 完成滑窗检测、ROI 缩放、64 维特征提取与门禁判定。整机在实板实测 CoreMark
-**5.169 CoreMark/MHz**、人脸计算吞吐约 **60 帧/秒**，三份码流均 All Constraints Met。
+**5.169 CoreMark/MHz**、人脸计算吞吐约 **60 帧/秒**，两份码流均 All Constraints Met。
 
 [技术报告](docs/技术报告_RISC-V人脸识别视觉SoC_最终提交版.pdf) · [三分钟展示](docs/RISC-V人脸识别视觉SoC_三分钟展示_精修版.pptx) · [复现手册](doc/reproduce.md)
 
@@ -29,7 +29,7 @@ riscv-facerec-soc/
 ├── doc/                  reproduce.md（RTL→位流的复现手册）、timing.md（时序证据）、
 │                         optimization.md（逐项优化实测）、tradeoff.md（频率↔性能的账）
 ├── MANIFEST.md           输入指纹清单（RTL/约束/固件/ROM 的 sha256）
-├── bitstreams/           三份最终码流 + MD5S.txt
+├── bitstreams/           两份最终码流 + MD5S.txt
 ├── signoff/              各配置最终 STA（.rtr）与布线资源（.rur）报告
 ├── configs/stable_menu/  稳定演示配置的 6 个数据文件（按 README.txt 覆盖即切换）
 └── docs/                 技术报告 PDF、三分钟展示 PPT
@@ -279,7 +279,7 @@ cache、预取器、BTB，以及 `cpu_stall` 状态输出。
 
 ---
 
-## 5.5 两套数据配置与三份码流的对应
+## 5.5 两套数据配置与两份码流的对应
 
 RTL 逻辑只有一个版本；换模型只改数据（4 个模型 ROM + `simple_ram.v` 固件初值 +
 `tb/flow_emb.hex` 仿真金标），网表结构与布局不变。本仓库 `configs/stable_menu/`
@@ -291,7 +291,7 @@ RTL 逻辑只有一个版本；换模型只改数据（4 个模型 ROM + `simple
 | `configs/stable_menu` 切换 | 稳定单人模板（演示 ROM） | 菜单配置交付树版本（STA 见 `signoff/facerec_top_release_stable.rtr`） | sys +0.260 / cnn +0.126 |
 
 两配置的整机仿真均为 `SYSTEM_INTEGRATION_PASS embedding=64/64 cpu_readback=16/16`
-（cycles=17402）。另两份码流（菜单演示版 / ILA 调试版）由开发期工作流生成，本仓库以码流与 STA 报告的形式提供。
+（cycles=17402）。菜单版码流由开发期工作流生成，本仓库以码流与 STA 报告的形式提供。
 
 ---
 
@@ -318,7 +318,7 @@ RTL 逻辑只有一个版本；换模型只改数据（4 个模型 ROM + `simple
 
 | 路径 | 内容 |
 |---|---|
-| `bitstreams/` | 三份最终码流（菜单版 / ILA 调试版 / 五人 QAT 版）与 MD5 清单 |
+| `bitstreams/` | 两份最终码流（菜单版 / 五人 QAT 版）与 MD5 清单 |
 | `signoff/` | 各配置最终 STA（.rtr）与完整布线资源（.rur）报告 |
 | `configs/stable_menu/` | 稳定演示配置的 6 个数据文件，按其中 README.txt 覆盖即切换 |
 | `docs/` | 技术报告 PDF、三分钟展示 PPT |
