@@ -3,31 +3,30 @@
 在紫光同创 **PG2L200H-6-FBB676** FPGA 上实现的异构片上系统：双发射 RV32I 处理器
 （101.25 MHz）与人脸识别 CNN 加速器（202.5 MHz）经保持总线与 toggle 握手跨域协作，
 完成滑窗检测、ROI 缩放、64 维特征提取与门禁判定。整机在实板实测 CoreMark
-**5.169 CoreMark/MHz**、人脸计算吞吐约 **60 帧/秒**，两份码流均 All Constraints Met。
+**5.169 CoreMark/MHz**、人脸计算吞吐约 **60 帧/秒**。
 
 [技术报告](docs/技术报告_RISC-V人脸识别视觉SoC_最终提交版.pdf) · [三分钟展示](docs/RISC-V人脸识别视觉SoC_三分钟展示_精修版.pptx) · [复现手册](doc/reproduce.md)
 
 本仓库是「睿识芯 RISC-V 人脸识别视觉 SoC」的**完整功能**源码树：
-双发射 RV32I CPU + FaceRec CNN 加速器 + ROM 帧源 + UART 菜单固件，
-**已剥离全部 ILA / PMU / dbg_pc 观测逻辑**，保留产品运行所需的全部功能。
+双发射 RV32I CPU + FaceRec CNN 加速器 + ROM 帧源 + UART 菜单固件。
 
 ```
 riscv-facerec-soc/
-├── rtl/                  综合用 RTL（唯一真源）
-│   ├── core/             CPU：5 级顺序双发射 RV32I + Zmmul（17 个文件含 rv32i_defs.v）
+├── rtl/                  
+│   ├── core/             CPU：5 级顺序双发射 RV32I + Zmmul
 │   ├── soc/              SoC：dcache/icache/pf_buffer/intc/uart/simple_ram/soc_top/CDC 桥
-│   ├── accel/            FaceRec CNN 加速器（27 个 .v + 15 个 ROM .mem）
-│   ├── board/            facerec_top（板级顶层）+ pll（27→101.25/202.5 MHz）
-│   └── files.f           综合文件清单（路径相对本目录）
+│   ├── accel/            FaceRec CNN 加速器
+│   ├── board/            facerec_top+ pll（27→101.25/202.5 MHz）
+│   └── files.f           综合文件清单
 ├── constraints/
-│   ├── product/board.fdc 产品约束：clk_sys 9.876543 ns + clk_cnn 4.938272 ns
-│   ├── product/signoff/  2025.2 签核用 timing_clean.sdc + d1pin6.pcf（15 条钉位）
-│   └── 27mhz/board.fdc   27 MHz 单时钟约束（保底配置，见 doc/timing.md §3）
+│   ├── product/board.fdc 约束
+│   ├── product/signoff/  timing_clean.sdc + d1pin6.pcf
+│   └── 27mhz/board.fdc   27 MHz 单时钟约束
 ├── tb/                   自检测试台 + 固件镜像 + CNN 黄金向量
 ├── sw/                   固件源码（菜单固件 + CoreMark + 门禁识别）
 ├── tools/                构建 / 综合 / 布局布线 / 位流比对脚本
 ├── doc/                  reproduce.md（RTL→位流的复现手册）、timing.md（时序证据）、
-│                         optimization.md（逐项优化实测）、tradeoff.md（频率↔性能的账）
+│                         optimization.md（逐项优化实测）、tradeoff.md
 ├── MANIFEST.md           输入指纹清单（RTL/约束/固件/ROM 的 sha256）
 ├── bitstreams/           两份最终码流 + MD5S.txt
 ├── signoff/              各配置最终 STA（.rtr）与布线资源（.rur）报告
@@ -73,10 +72,6 @@ CoreMark 官方参考值：
 | 指令数 | 274,696 → 274,697（不变） |
 | IPC（指令数 / ticks） | 1.412 → **1.442**（+2.1%） |
 
-> 仿真里 CoreMark 会打印 `ERROR! Must execute for at least 10 secs`。这是
-`core_main.c` 用**实际墙钟秒数**判定跑分时长导致的：仿真不消耗真实时间，
-`time_in_secs()` 恒为 0。上板 101.25 MHz、6,000 次迭代约 11.6 s，不会误报。
-CRC 四行与官方一致，才代表结果正确。
 
 ### 2.2 整机集成（CPU + CNN 端到端）
 
@@ -90,9 +85,9 @@ SYSTEM_INTEGRATION_PASS cycles=17402 embedding=64/64 cpu_readback=16/16
 
 即 64 字节 embedding 与黄金向量逐字节相等、CPU 侧 16 拍突发回读全部一致。
 
-### 2.3 时序（布线级签核）
+### 2.3 时序
 
-产品约束（clk_sys 9.876543 ns / clk_cnn 4.938272 ns）**已完整布线签核**：
+约束（clk_sys 9.876543 ns / clk_cnn 4.938272 ns）：
 
 | 运行 | 对象 | clk_sys WNS | clk_cnn WNS | 结论 |
 |---|---|---|---|---|
@@ -102,10 +97,6 @@ SYSTEM_INTEGRATION_PASS cycles=17402 embedding=64/64 cpu_readback=16/16
 
 交付树实测：sys 103.99 MHz（0/40,542 失败）、cnn 207.80 MHz（0/144,617 失败），
 hold +0.098 / +0.101 ns。位流 `9,188,552 B`。
-
-**同源复现已验证**：用签核网表 `fc403490…` 走同一条任务流，复现出
-`+0.459 / +0.119`（与签核报告逐位相同），位流 **除头部生成时间戳外逐字节相同**
-（9,188,546 / 9,188,552 B 一致）。即布局布线是确定性的，配方可重放。
 
 详见 `doc/timing.md`（时序证据）与 `doc/reproduce.md`（复现手册）。
 
@@ -145,12 +136,10 @@ vvp /tmp/sys.vvp
 
 ### 3.2 综合 + 布局布线（Pango PDS）
 
-**签核流程是两段式的，引擎不同，别混用**：
-
 | 阶段 | 引擎 | 原因 |
 |---|---|---|
-| 综合 | **2022.2-SP6.4** | 2025.2 综合器在本设计上段错误（`rtl-data-opt` 阶段 `signal 11`） |
-| 布局 + 布线 + 出码流 | **2025.2** | 只有 2025.2 的数字互相可比（跨引擎排名会反转） |
+| 综合 | **2022.2-SP6.4** | 2025.2 综合器在本设计上段错误 |
+| 布局 + 布线 + 出码流 | **2025.2** | 只有 2025.2 的数字互相可比 |
 
 **推荐用法 —— 一条命令走完全程**（含码流比对，约 55 min）：
 
@@ -223,8 +212,7 @@ python tools/build_integration_fw.py --check   # 重建并逐字节比对现有�
 
 ### 3.4 生成帧 ROM（可选，仓库不附带人脸图像）
 
-`rtl/accel/mem/framesrc.mem` 在原始交付包中为四帧人脸图像的 ROM 转储，原数据来自
-ChokePoint 研究数据集，**不得再分发**。本仓库附带的是**合成测试图案**占位 ROM
+`rtl/accel/mem/framesrc.mem` 原数据来自ChokePoint 研究数据集。本仓库附带的是合成测试图案占位 ROM
 （梯度背景 + 运动方块，非真人图像），保证开箱即可仿真；需要真实画面时自行替换：
 
 ```bash
@@ -240,26 +228,7 @@ ROM 格式与 `rtl/accel/cnn_framesrc.v` 一致：每行一个 24b 字（`%06X`�
 
 ---
 
-## 4. 与「带 ILA 的调试版」的差异
-
-剥离的**只有观测网络**，没有触碰任何功能路径：
-
-| 文件 | 剥离内容 |
-|---|---|
-| `core/cpu_rv32i.v` | `dbg_pc`、`pm_events`、`pm_events2`、`pm_dual`、`pm_dual2/3`、`pm_pf3`、`pm_retire2` 端口与驱动；`pm_events_q/pm_events2_q` 打拍寄存器 |
-| `soc/soc_top.v` | `dbg_pc` 端口与连线、全部 `pm_*` 观测线、`pmhi_sel` 译码、`pm_cnt[0:46]` 47 个计数器整块、`pm_clear/pm_stop/pm_frozen`、ICache busy 观测、预取器观测口、dcache 统计口 |
-| `board/facerec_top.v` | `.dbg_pc()` 连线 |
-
-**为什么这不影响时序、也不会变差**：被删的每一根线都只驱动观测端口，
-不参与任何控制/数据判决；其中 `pm_events` 当初正是因为**扇出 112**才被刻意
-打了一拍流水 —— 删掉它只会缩短路径，不可能拉长。
-
-保留：64 位周期计数器（`0x3000_0000/0004`，固件要用）、UART、GPIO、INTC、
-cache、预取器、BTB，以及 `cpu_stall` 状态输出。
-
----
-
-## 5. 优化（详见 `doc/optimization.md`）
+## 4. 优化（详见 `doc/optimization.md`）
 
 按分析报告第 8 章的方向做**逐项实测**，只有测出正收益的才进交付树：
 
@@ -273,13 +242,9 @@ cache、预取器、BTB，以及 `cpu_stall` 状态输出。
 预取深度 8→16 的代价只是 8 组 `{addr,data}` 寄存器；关键路径上比较的是
 **常量** `DEPTH-2`，与深度无关，因此不进入新的关键路径。
 
-**为什么把钱花在 IPC 而不是频率**：见 `doc/tradeoff.md`。一句话 —— 签核余量
-是 CPU +4.16% / CNN +2.34%，而 PLL 的下一档是 **+6.67%**（VCO 810→864），
-一步就跨过全部余量；频率这条路上没有 2% 的增量可买，而 IPC 上刚好有。
-
 ---
 
-## 5.5 两套数据配置与两份码流的对应
+## 4.5 两套数据配置与两份码流的对应
 
 RTL 逻辑只有一个版本；换模型只改数据（4 个模型 ROM + `simple_ram.v` 固件初值 +
 `tb/flow_emb.hex` 仿真金标），网表结构与布局不变。本仓库 `configs/stable_menu/`
@@ -295,26 +260,7 @@ RTL 逻辑只有一个版本；换模型只改数据（4 个模型 ROM + `simple
 
 ---
 
-## 6. 已知限制
-
-1. **产品约束已布线签核**（交付树 +0.260 / +0.126 ns，见 §2.3），但余量不厚：
-   两个域都只剩 ~0.1–0.3 ns。任何往 `clk_cnn` 上加逻辑的改动，都必须重跑一次
-   完整 P&R 才能确认。布局落点有 ±0.3 ns 级抖动，同一份网表重跑 slack 会浮动，
-   所以判断"改动有没有伤时序"必须看多次运行，不能只比一次。
-2. **27 MHz 单时钟只在 CPU-only 工程上签核过**（+14.080 ns / TNS 0），
-   整机 27 MHz 没有单独跑过。本树给了 `FACEREC_NO_PLL` + 27 MHz FDC，
-   需要时按 §3.2 跑一次；周期放大 3.75×/7.5×，通过没有悬念，但推断不算证据。
-3. **2025.2 许可**：PDS 许可证与机器 hostid 绑定，本仓库不附带任何许可文件；
-   请通过 `PANGO_LICENSE_FILE` 环境变量或 Makefile 的 `LIC_2025` 指向你自己的许可证。
-4. `soc_top` 里保留了若干历史遗留参数（`QLN_EN`、`ACCEL_EN`、`QLN_*`）。
-   它们默认 0，对应模块（`qln_top`、`accel/acc_top*.v`）不参与综合，
-   也不在 `files.f` 里，属于惰性配置项；未做删除以免影响已验证网表。
-5. `accel/mem/*.mem` 是 CNN 权重/描述符 ROM，必须随 RTL 一起保留；
-   `files.f` 中已包含，缺一个都会导致 CNN 输出错误。
-
----
-
-## 7. 仓库内容与文档
+## 5. 仓库内容与文档
 
 | 路径 | 内容 |
 |---|---|
@@ -324,7 +270,7 @@ RTL 逻辑只有一个版本；换模型只改数据（4 个模型 ROM + `simple
 | `docs/` | 技术报告 PDF、三分钟展示 PPT |
 | `doc/` | 复现手册、时序证据、逐项优化、频率/性能权衡 |
 
-## 8. 许可证与第三方组件
+## 6. 许可证与第三方组件
 
 本项目以 **MIT 许可证**开源，详见 [LICENSE](LICENSE)。
 
@@ -334,6 +280,6 @@ RTL 逻辑只有一个版本；换模型只改数据（4 个模型 ROM + `simple
 - 模型权重为本项目基于公开数据自行训练并量化的结果，随仓库提供的 `.mem` 为权重/描述符 ROM。
 - 紫光同创 PDS 工具链不随仓库提供，需自行安装并配置与本机 hostid 绑定的许可证。
 
-## 9. 引用
+## 7. 引用
 
 如本项目对你的工作有帮助，欢迎引用 `docs/` 中的技术报告。
